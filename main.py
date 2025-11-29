@@ -53,6 +53,8 @@ class ScoreCard:
         self.highscore_path = os.path.join('score', 'highscore.save')
         self.load_highscore()
 
+#Santhosh Reddy
+
     def load_highscore(self):
         # load high score upon initializing game
         try:
@@ -110,6 +112,8 @@ class Block:
             ]
         )
 
+#Suchir Manikanta
+
     def move(self, x, y):
         self.passed = False
         self.x_block = x
@@ -134,8 +138,7 @@ class Block:
             and bird.x + bird.img_width > self.x_block
             and bird.x < self.x_block + self.block_width
         )
-
-
+    
 class TextBlock:
     def __init__(self, text, size=20):
         self.font = pygame.font.Font('freesansbold.ttf', size)
@@ -146,7 +149,6 @@ class TextBlock:
 
     def draw(self, position):
         surface.blit(self.text, position)
-
 
 class NoisyBird:
 
@@ -174,6 +176,8 @@ class NoisyBird:
             random.randint(0, surfaceHeight / 2),
             NoisyBird.bird.img_height*5
         )
+
+#Roohit Kathiresan
 
     def replay_or_quit(self):
         for event in pygame.event.get(
@@ -231,6 +235,8 @@ class NoisyBird:
     def gameOver(self):
         NoisyBird.bird.die_sound.play()
         self.game_over_screen()
+
+#Poojitha Vadlamudi
 
     def play(self):
         NoisyBird.reset_game()
@@ -291,3 +297,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#Bharat Balaji Rao
