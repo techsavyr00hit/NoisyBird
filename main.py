@@ -65,7 +65,7 @@ class NoisyBirdGame:
                 self.power_sound.play()
             except Exception:
                 pass
-
+#BBR
     def play(self):
         self.bird = Bird(150, 200, self.settings)
         self.score = 0
@@ -221,3 +221,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+#roohit

@@ -90,3 +90,4 @@ class PowerUp:
     def collides(self, bird: Bird) -> bool:
         rect = pygame.Rect(int(self.x), int(self.y), self.size, self.size)
         return rect.colliderect(pygame.Rect(int(bird.x), int(bird.y), bird.w, bird.h))
+#kaviya

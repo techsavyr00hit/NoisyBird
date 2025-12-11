@@ -81,3 +81,4 @@ def load_sound_safe(path: str):
         return pygame.mixer.Sound(path)
     except Exception:
         return None
+#santhosh reddy

@@ -64,3 +64,4 @@ class VolumeSmoother:
         if not self.history:
             return 0.0
         return sum(self.history) / len(self.history)
+#bbr
