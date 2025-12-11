@@ -30,7 +30,14 @@ os.makedirs('sounds', exist_ok=True)
 os.makedirs('score', exist_ok=True)
 SETTINGS_PATH = os.path.join('score', 'settings.json')
 HIGHSCORE_PATH = os.path.join('score', 'highscore.save')
-DEFAULT_SETTINGS = {"volume": 0.6, "muted": False, "sensitivity": 1.0, "mic_threshold": 0.03}
+
+# Reduced noise sensitivity by default:
+DEFAULT_SETTINGS = {
+    "volume": 0.6,
+    "muted": False,
+    "sensitivity": 0.6,   # lower = less sensitive to mic noise
+    "mic_threshold": 0.07  # higher = less sensitive to mic noise
+}
 
 def load_settings():
     try:
@@ -85,9 +92,13 @@ class Bird:
         pygame.draw.ellipse(self.image, (255, 200, 0), (0, 0, 40, 30))
         self.w, self.h = self.image.get_size()
         self.vel_y = 0.0
-        self.gravity = 0.5
-        self.jump_strength = 8.0
-        self.max_fall = 12.0
+
+        # ===== Updated movement parameters: slower fall, stronger flap =====
+        # Recommended values for slower descent:
+        self.gravity = 0.32        # reduced from 0.5 -> falls more slowly
+        self.jump_strength = 9.0   # increased from 8.0 -> flaps feel stronger/longer
+        self.max_fall = 7.0        # reduced from 12.0 -> limits terminal velocity
+
         self.die_sound = load_sound(os.path.join('sounds', 'die.mp3'))
 
     def draw(self, surf):
@@ -175,43 +186,40 @@ class NoisyBirdGame:
         self.blocks = []
         self.powerups = []
         self.block_speed = 3.0
-        self.block_gap = self.bird.h * 4
-        self.block_w = 60
+
+        # Keep larger vertical gap and spacing tweaks
+        self.block_gap = int(self.bird.h * 5)  # larger vertical gap
+        self.block_w = 70  # pipe width
         self.spawn_timer = 0.0
-        self.spawn_interval = 1.8
+        self.spawn_interval = 2.6  # increased spawn interval => more horizontal spacing
+
         self.slow_until = 0.0
         self.double_until = 0.0
         self.stream = None
         self.point_sound = load_sound(os.path.join('sounds', 'point.mp3'))
         self.power_sound = load_sound(os.path.join('sounds', 'power.wav'))
-        # mic threshold can be tuned or stored in settings
-        self.mic_threshold = self.settings.get('mic_threshold', 0.03)
+        # mic threshold comes from settings (default reduced sensitivity)
+        self.mic_threshold = self.settings.get('mic_threshold', DEFAULT_SETTINGS['mic_threshold'])
         self._volume_history = []  # small smoothing buffer
 
     @staticmethod
     def audio_cb(indata, frames, time_info, status):
-        # signature: (indata, frames, time_info, status) for sounddevice InputStream
         if status:
-            # print audio status messages (device warnings etc.)
             print("Audio status:", status)
         try:
-            # indata is (frames, channels). compute RMS across all samples
             rms = float(np.sqrt(np.mean(np.square(indata.astype(np.float32)))))
         except Exception as e:
             print("audio_cb error:", e)
             rms = 0.0
-        # small scaling is OK; we store raw RMS (0.0 .. ~0.2 typical)
         NoisyBirdGame._last_volume = rms
 
     def start_mic(self):
         try:
-            # try to choose a reasonable samplerate
             try:
                 dev_info = sd.query_devices(kind='input')
                 samplerate = int(dev_info['default_samplerate'])
             except Exception:
                 samplerate = 44100
-            # open input stream with 1 channel (mono)
             self.stream = sd.InputStream(callback=NoisyBirdGame.audio_cb,
                                          channels=1,
                                          samplerate=samplerate,
@@ -235,11 +243,11 @@ class NoisyBirdGame:
 
     def spawn_block(self):
         top_h = random.randint(0, HEIGHT // 2)
-        self.blocks.append(Block(WIDTH + 20, self.block_w, top_h, self.block_gap))
+        self.blocks.append(Block(WIDTH + 80, self.block_w, top_h, self.block_gap))
 
     def spawn_powerup(self):
         kind = random.choice(PowerUp.TYPES)
-        x = WIDTH + 50
+        x = WIDTH + 120
         y = random.randint(60, HEIGHT - 80)
         self.powerups.append(PowerUp(kind, x, y))
         if self.power_sound and not self.settings.get('muted'):
@@ -303,16 +311,17 @@ class NoisyBirdGame:
             smooth_vol = sum(self._volume_history) / len(self._volume_history)
 
             # If exceeded threshold (tunable), flap
-            if smooth_vol * self.settings.get('sensitivity', 1.0) > self.mic_threshold:
+            if smooth_vol * self.settings.get('sensitivity', DEFAULT_SETTINGS['sensitivity']) > self.mic_threshold:
                 self.bird.flap()
 
             # Draw bird & HUD
             self.bird.update()
             self.bird.draw(SCREEN)
 
-            # show debug audio level on screen
-            draw_text(SCREEN, f"Mic RMS: {smooth_vol:.4f}", 18, WIDTH - 200, HEIGHT - 30, GREY)
-            draw_text(SCREEN, f"Threshold: {self.mic_threshold:.3f}", 14, WIDTH - 200, HEIGHT - 50, GREY)
+            # show debug audio level on screen and current sensitivity
+            draw_text(SCREEN, f"Mic RMS: {smooth_vol:.4f}", 18, WIDTH - 220, HEIGHT - 30, GREY)
+            draw_text(SCREEN, f"Thresh: {self.mic_threshold:.3f}", 14, WIDTH - 220, HEIGHT - 50, GREY)
+            draw_text(SCREEN, f"Sensitivity: {self.settings.get('sensitivity', DEFAULT_SETTINGS['sensitivity']):.2f}", 14, WIDTH - 220, HEIGHT - 70, GREY)
 
             self.spawn_timer += dt
             if self.spawn_timer > self.spawn_interval:
@@ -406,6 +415,7 @@ class NoisyBirdGame:
             draw_text(SCREEN, 'NOISY BIRD', 64, WIDTH//2 - 160, 40)
             draw_text(SCREEN, 'Press SPACE or make noise to start, ESC to quit', 20, WIDTH//2 - 260, 140)
             draw_text(SCREEN, f'Highscore: {self.highscore}', 22, WIDTH//2 - 120, 220)
+            draw_text(SCREEN, f"Sensitivity: {self.settings.get('sensitivity', DEFAULT_SETTINGS['sensitivity']):.2f}", 18, WIDTH//2 - 120, 260)
             pygame.display.update()
             started = False
             for ev in pygame.event.get():
@@ -416,7 +426,7 @@ class NoisyBirdGame:
                         pygame.quit(); exit()
                     else:
                         started = True
-            if NoisyBirdGame._last_volume * self.settings.get('sensitivity', 100.0) > self.mic_threshold:
+            if NoisyBirdGame._last_volume * self.settings.get('sensitivity', DEFAULT_SETTINGS['sensitivity']) > self.mic_threshold:
                 started = True
             if started:
                 self.play()
