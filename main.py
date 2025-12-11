@@ -214,7 +214,6 @@ class NoisyBirdGame:
     
             self.CLOCK.tick(15)
 
-
 def main():
     save_settings(load_settings())
     game = NoisyBirdGame(screen=SCREEN, clock=CLOCK, fps=FPS, width=WIDTH, height=HEIGHT)
