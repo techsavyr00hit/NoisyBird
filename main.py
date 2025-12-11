@@ -194,20 +194,26 @@ class NoisyBirdGame:
     def run_menu(self):
         while True:
             self.SCREEN.fill(BLUE)
-            draw_text(self.SCREEN, 'NOISY BIRD (MIC ONLY)', 64, self.WIDTH//2 - 220, 40)
-            draw_text(self.SCREEN, 'Make noise to start, ESC to quit', 20, self.WIDTH//2 - 180, 140)
+            draw_text(self.SCREEN, 'NOISY BIRD', 64, self.WIDTH//2 - 160, 40)
+            draw_text(self.SCREEN, 'Press SPACE to start, ESC to quit', 20, self.WIDTH//2 - 180, 140)
             draw_text(self.SCREEN, f'Highscore: {self.highscore}', 22, self.WIDTH//2 - 120, 220)
-            draw_text(self.SCREEN, f"Sensitivity: {self.settings.get('sensitivity', 0.6):.2f}", 18, self.WIDTH//2 - 120, 260)
+            draw_text(self.SCREEN, f"Sensitivity: {self.settings.get('sensitivity', 0.6):.2f}",
+                18, self.WIDTH//2 - 120, 260)
             pygame.display.update()
+
             for ev in pygame.event.get():
                 if ev.type == pygame.QUIT:
-                    pygame.quit(); exit()
+                    pygame.quit()
+                    exit()
                 if ev.type == pygame.KEYDOWN:
                     if ev.key == pygame.K_ESCAPE:
-                        pygame.quit(); exit()
-            if MicReader._last_volume * self.settings.get('sensitivity', 0.6) > self.mic_threshold:
-                self.play()
+                        pygame.quit()
+                        exit()
+                    if ev.key == pygame.K_SPACE:
+                        self.play()
+    
             self.CLOCK.tick(15)
+
 
 def main():
     save_settings(load_settings())
